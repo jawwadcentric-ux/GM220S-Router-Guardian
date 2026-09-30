@@ -7,4 +7,5 @@ local.properties
 *.iml
 artifacts/
 .android-cache/
+.android-user/
 tests/build/

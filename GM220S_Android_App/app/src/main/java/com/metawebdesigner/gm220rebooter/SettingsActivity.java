@@ -15,9 +15,9 @@ import java.util.Locale;
 
 public final class SettingsActivity extends GuardianActivity {
     private EditText address, user, password, interval, maximum, cooldown, retries, retryMinutes;
-    private Switch schedule, watchdog, notifications, protect;
+    private Switch schedule, watchdog, notifications, protect, liveSpeed, showNetworkName, showSpeedSummary, showSpeedChart;
     private final CheckBox[] weekdays = new CheckBox[7];
-    private Spinner theme;
+    private Spinner theme, speedInterval;
     private TextView time, bound, backgroundStatus;
     private int hour, minute;
     private String boundSsid;
@@ -55,12 +55,27 @@ public final class SettingsActivity extends GuardianActivity {
         hour = prefs.raw().getInt("hour", 5); minute = prefs.raw().getInt("minute", 0);
         boundSsid = prefs.raw().getString("bound_ssid", "");
         page("Settings", "Your router, your schedule. Changes apply when saved.");
+        navigation(TAB_SETTINGS);
         LinearLayout router = card("Router connection");
         address = field(router, "Router address", prefs.raw().getString("router", "http://192.168.1.1"), false, false);
         user = field(router, "Username", prefs.getSecret("username", ""), false, false);
         password = field(router, "Password", prefs.getSecret("password", ""), true, false);
         detail(router, "Credentials are encrypted with Android Keystore. Screenshots are disabled here.");
         protect = toggle(router, "Use phone screen lock for settings", "protect_settings", false);
+
+        LinearLayout speed = card("Live speed");
+        liveSpeed = toggle(speed, "Show live network speed", "speed_enabled", true);
+        showNetworkName = toggle(speed, "Show network name when available", "speed_network_name", true);
+        showSpeedSummary = toggle(speed, "Show session usage and average", "speed_summary", true);
+        showSpeedChart = toggle(speed, "Show recent activity chart", "speed_chart", true);
+        detail(speed, "Refresh interval");
+        speedInterval = new Spinner(this);
+        String[] intervals = {"1 second", "2 seconds", "5 seconds"};
+        speedInterval.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, intervals));
+        int savedInterval = prefs.raw().getInt("speed_interval", 2);
+        speedInterval.setSelection(savedInterval == 1 ? 0 : savedInterval == 5 ? 2 : 1);
+        speedInterval.setMinimumHeight(dp(48)); speed.addView(speedInterval);
+        detail(speed, "Uses Android device traffic counters for the active connection. It measures real-time activity; it does not run a benchmark or create traffic.");
 
         LinearLayout daily = card("Scheduled restart");
         schedule = toggle(daily, "Enable scheduled restart", "enabled", false);
@@ -115,9 +130,8 @@ public final class SettingsActivity extends GuardianActivity {
         });
         button(help, "Open app battery settings", false, () -> open(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))));
         LinearLayout about = card("About");
-        detail(about, "GM220-S Router Guardian 1.0.0\nSupports GM220-S XPON hardware V9.0 with firmware V9.0.10P1T1.\n\nSingle-router utility. No accounts, cloud service, analytics, ads or telemetry. Router credentials remain encrypted on this phone. The verified router communication behavior is preserved from the read-only GM220S-Router-Rebooter reference project.");
+        detail(about, "GM220-S Router Guardian 1.1.0\nSupports GM220-S XPON hardware V9.0 with firmware V9.0.10P1T1.\n\nSingle-router utility. No accounts, cloud service, analytics, ads or telemetry. Router credentials remain encrypted on this phone. The verified router communication behavior is preserved from the read-only GM220S-Router-Rebooter reference project.");
         button(root, "Save settings", true, this::save);
-        button(root, "Back to dashboard", false, this::finish);
     }
     private String bindingLabel() { return boundSsid.isEmpty() ? "Wi-Fi binding • Not set" : "Wi-Fi binding • " + boundSsid; }
     private void bindWifi() {
@@ -160,6 +174,9 @@ public final class SettingsActivity extends GuardianActivity {
             prefs.putCredentials(user.getText().toString().trim(), password.getText().toString());
             prefs.raw().edit().putString("router", base.replaceAll("/+$", "")).putBoolean("enabled", schedule.isChecked())
                 .putBoolean("watchdog", watchdog.isChecked()).putBoolean("notifications", notifications.isChecked())
+                .putBoolean("speed_enabled", liveSpeed.isChecked()).putBoolean("speed_network_name", showNetworkName.isChecked())
+                .putBoolean("speed_summary", showSpeedSummary.isChecked()).putBoolean("speed_chart", showSpeedChart.isChecked())
+                .putInt("speed_interval", speedInterval.getSelectedItemPosition() == 0 ? 1 : speedInterval.getSelectedItemPosition() == 2 ? 5 : 2)
                 .putBoolean("protect_settings", protect.isChecked()).putInt("hour", hour).putInt("minute", minute).putInt("days", days)
                 .putInt("interval", check).putInt("max_reboots", max).putInt("cooldown", cool).putInt("retries", retry)
                 .putInt("retry_minutes", delay).putString("bound_ssid", boundSsid).putString("theme", theme.getSelectedItem().toString()).commit();

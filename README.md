@@ -1,8 +1,9 @@
 # GM220-S Router Guardian
 
-An Android utility for one GM220-S XPON router. It tests router login, sends a
-confirmed manual restart, schedules selected restart days, monitors internet
-health with a guarded watchdog, and keeps a private local history.
+An Android utility with a device-wide live network activity monitor and guarded
+management for one GM220-S XPON router. It tests router login, sends a confirmed
+manual restart, schedules selected restart days, monitors internet health with a
+guarded watchdog, and keeps a private local history.
 
 Supported hardware: **GM220-S XPON V9.0**, verified firmware
 **V9.0.10P1T1**. Other firmware may behave differently.
@@ -16,8 +17,12 @@ See [REFERENCE.md](REFERENCE.md) for the inspected snapshot and source hash.
 
 ## Features
 
-- Dashboard for Wi-Fi, router login, internet, recent contact, last restart,
-  next schedule, and automation state.
+- Clean four-section navigation: Dashboard, Router, History, and Settings.
+- Live device network activity for Wi-Fi, mobile data, Ethernet, VPN, or another
+  active internet connection, with download/upload rates, connection type,
+  optional Wi-Fi name, session totals, recent averages, and a compact trend.
+- Glanceable dashboard with compact status tiles, icon-led actions, router
+  summary, and automation state. Detailed router information lives in Router.
 - Manual Test connection and confirmation-protected Restart router actions.
 - Scheduled restarts at a chosen time on selected weekdays.
 - Retry after temporary Wi-Fi/router reachability failures: 10 minutes, up to
@@ -67,8 +72,10 @@ See [REFERENCE.md](REFERENCE.md) for the inspected snapshot and source hash.
 | `POST_NOTIFICATIONS` | Automatic restart/recovery results on Android 13+ |
 
 Location permission is requested only when the user chooses Wi-Fi-name binding.
-Guardian does not collect or transmit location. Cleartext traffic stays enabled
-because this router's verified local management protocol uses HTTP.
+When already granted, it also lets the dashboard display the current Wi-Fi name;
+live rate monitoring itself does not require location. Guardian does not collect
+or transmit location. Cleartext traffic stays enabled because this router's
+verified local management protocol uses HTTP.
 
 ## Background behavior and limits
 
@@ -119,6 +126,15 @@ History contains timestamps, trigger type, a fixed reason, success/failure, and
 a user-safe result. Exported files therefore contain no router secrets.
 
 ## Known limitations
+
+- Live speed is passive activity monitoring based on Android's device traffic
+  counters. It shows traffic currently moving through the phone and does not
+  download test data, measure maximum line capacity, or replace a benchmark such
+  as Ookla. The session summary begins when the dashboard opens; Android does not
+  expose a reliable permission-free per-network rolling 24-hour history on every
+  supported version. Some devices may omit traffic from unsupported interfaces.
+- Wi-Fi names may show as “Wi-Fi network” when Android withholds the SSID because
+  Location permission or the device Location switch is off.
 
 - Real-hardware login, restart, recovery time, and OEM background behavior must
   be accepted on the user's router and Android phone; automated tests use only a

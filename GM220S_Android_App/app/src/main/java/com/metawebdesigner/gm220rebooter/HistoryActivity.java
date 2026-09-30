@@ -13,6 +13,7 @@ public final class HistoryActivity extends GuardianActivity {
     @Override protected void onCreate(Bundle state) { super.onCreate(state); render(); }
     private void render() {
         page("Restart history", "Latest 200 events • stored only on this phone");
+        navigation(TAB_HISTORY);
         LinearLayout controls = card("Your activity log");
         button(controls, "Share CSV", false, () -> share(true));
         button(controls, "Share plain text", false, () -> share(false));
@@ -27,7 +28,6 @@ public final class HistoryActivity extends GuardianActivity {
             LinearLayout row = card((event.optBoolean("success") ? "✓  " : "!  ") + event.optString("source") + " • " + HistoryStore.time(event.optLong("time")));
             detail(row, event.optString("reason") + "\n" + event.optString("result"));
         }
-        button(root, "Back to dashboard", false, this::finish);
     }
     private void share(boolean csv) {
         try {

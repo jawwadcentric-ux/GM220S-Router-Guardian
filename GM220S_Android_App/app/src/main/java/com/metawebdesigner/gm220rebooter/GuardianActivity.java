@@ -1,6 +1,7 @@
 package com.metawebdesigner.gm220rebooter;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -14,7 +15,9 @@ public abstract class GuardianActivity extends Activity {
     protected SecurePrefs prefs;
     protected int background, surface, ink, muted, accent, border;
     protected LinearLayout root;
+    private LinearLayout shell;
     protected boolean dark;
+    protected static final int TAB_DASHBOARD = 0, TAB_ROUTER = 1, TAB_HISTORY = 2, TAB_SETTINGS = 3;
     @Override protected void onCreate(Bundle state) {
         prefs = new SecurePrefs(this);
         String theme = prefs.raw().getString("theme", "System");
@@ -33,6 +36,9 @@ public abstract class GuardianActivity extends Activity {
     }
     protected int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     protected void page(String title, String subtitle) {
+        shell = new LinearLayout(this);
+        shell.setOrientation(LinearLayout.VERTICAL);
+        shell.setBackgroundColor(background);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(background);
@@ -48,7 +54,8 @@ public abstract class GuardianActivity extends Activity {
         TextView sub = label(subtitle, 14, muted, false);
         sub.setPadding(0, dp(5), 0, dp(22));
         root.addView(sub);
-        setContentView(scroll);
+        shell.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
+        setContentView(shell);
     }
     protected TextView label(String value, int size, int color, boolean bold) {
         TextView text = new TextView(this);
@@ -82,6 +89,45 @@ public abstract class GuardianActivity extends Activity {
         button.setMinHeight(dp(52)); button.setPadding(dp(12), dp(10), dp(12), dp(10));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); lp.topMargin = dp(8);
         parent.addView(button, lp); button.setOnClickListener(v -> action.run()); return button;
+    }
+    protected LinearLayout horizontal() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        return row;
+    }
+    protected Button actionButton(LinearLayout parent, int icon, String title, boolean primary, Runnable action) {
+        Button button = new Button(this);
+        button.setText(title); button.setAllCaps(false); button.setTextSize(14); button.setGravity(Gravity.CENTER);
+        button.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0); button.setCompoundDrawablePadding(dp(6));
+        button.setTextColor(primary ? (dark ? Color.parseColor("#10382E") : Color.WHITE) : ink);
+        button.setBackground(rounded(primary ? accent : background, 14)); button.setMinHeight(dp(76));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f); lp.setMargins(dp(4), dp(4), dp(4), dp(4));
+        parent.addView(button, lp); button.setOnClickListener(v -> action.run()); return button;
+    }
+    protected void navigation(int selected) {
+        if (shell == null) return;
+        LinearLayout nav = horizontal();
+        nav.setPadding(dp(8), dp(6), dp(8), dp(8)); nav.setBackgroundColor(surface);
+        addNav(nav, android.R.drawable.ic_menu_view, "Dashboard", TAB_DASHBOARD, selected, MainActivity.class);
+        addNav(nav, android.R.drawable.ic_menu_manage, "Router", TAB_ROUTER, selected, RouterActivity.class);
+        addNav(nav, android.R.drawable.ic_menu_recent_history, "History", TAB_HISTORY, selected, HistoryActivity.class);
+        addNav(nav, android.R.drawable.ic_menu_preferences, "Settings", TAB_SETTINGS, selected, SettingsActivity.class);
+        shell.addView(nav, new LinearLayout.LayoutParams(-1, -2));
+    }
+    private void addNav(LinearLayout nav, int icon, String title, int tab, int selected, Class<?> target) {
+        Button item = new Button(this);
+        item.setText(title); item.setAllCaps(false); item.setTextSize(11); item.setGravity(Gravity.CENTER);
+        item.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0); item.setCompoundDrawablePadding(dp(2));
+        item.setTextColor(tab == selected ? accent : muted);
+        item.setBackgroundColor(Color.TRANSPARENT); item.setMinHeight(dp(58)); item.setPadding(0, dp(3), 0, dp(2));
+        nav.addView(item, new LinearLayout.LayoutParams(0, -2, 1f));
+        if (tab != selected) item.setOnClickListener(v -> openTab(target));
+    }
+    protected void openTab(Class<?> target) {
+        Intent intent = new Intent(this, target).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        if (target == MainActivity.class) intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
     }
     protected void message(String text) { Toast.makeText(this, text, Toast.LENGTH_LONG).show(); }
 }
